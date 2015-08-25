@@ -88,6 +88,7 @@ getting the `music` command working.
 
 Feel free to fork the repo and open a pull request. Some suggestions:
 
+* Brew formula
 * More notification methods
 * Testimonials for the readme
 * Benchmarking results
