@@ -11,15 +11,11 @@
 # See them all in action:
 #
 # music <long running command> && woof command succeeed || woof command failed
- 
-TWITTER_HANDLE= # twitter handle
-EMAIL_ADDRESS= # email address
-CELL_EMAIL_ADDRESS= # email address for your cell phone (ie 1234567890@vtext.com)
-TERMINAL_APP="com.apple.Terminal" # replace with iterm if you use that
-THEME_SONG="~/waiting.mp3" # replace with a path to your theme song
-                           # we recommend jeopardy
- 
- 
+
+set -e
+
+CONFIG_FILE=~/.woofrc
+
 # play music file in THEME_SONG continuously
 playmusic() {
   if [ ! -f ${THEME_SONG} ]
@@ -29,9 +25,9 @@ playmusic() {
     while :; do afplay ${THEME_SONG}; done;
   fi
 }
- 
+
 # Play your theme song until a command finishes
-# Usage: music git status
+# Usage: woof music git status
 music() {
   playmusic &
   tokill=$!
@@ -40,43 +36,43 @@ music() {
   kill $tokill
   killall afplay
 }
- 
+
 # Display a growl notification (install https://github.com/alloy/terminal-notifier first)
-# Usage: notify your job just finished
+# Usage: woof notify your job just finished
 notify() {
   terminal-notifier -title "$*" -message "$*" -activate ${TERMINAL_APP} # replace with iterm if you use that
 }
- 
-# Send yourself a text 
-# Usage: text your job just finished
+
+# Send yourself a text
+# Usage: woof text your job just finished
 text() {
   echo "$*" | mail -s "" ${CELL_EMAIL_ADDRESS}
 }
- 
+
 # Send a tweet (set up https://github.com/twitter/twurl first)
-# Usage: tweet my job just finished
+# Usage: woof tweet my job just finished
 tweet() {
   twurl -d "status=$*" /1.1/statuses/update.json
 }
- 
+
 # Send yourself a twitter direct message (set up https://github.com/twitter/twurl first)
-# Usage: dm_me your job just finished
+# Usage: woof dm_me your job just finished
 dm_me() {
   twurl -d "text=$*&screen_name=${TWITTER_HANDLE}" /1.1/direct_messages/new.json
 }
- 
+
 # Send yourself an email
-# Usage: email your job just finished
+# Usage: woof email your job just finished
 email() {
   echo "$*" | mail -s "" ${EMAIL_ADDRESS}
 }
- 
+
 # Also note that the "say" command is built into mac osx
 # Usage: say your job just finished
- 
+
 # Send yourself a message by all available means
-# Usage: woof your job just finished
-woof() {
+# Usage: woof woof your job just finished
+woofall() {
   email $*
   dm_me $*
   text $*
@@ -85,3 +81,57 @@ woof() {
   # uncomment this if you want to tweet as well:
   # tweet $*
 }
+
+usage() {
+  echo $"Usage: $0 {email|text|dm_me|tweet|notify|say|music|woof|configure} arguments..."
+}
+
+prompt_for() {
+  touch ${CONFIG_FILE}
+  . ${CONFIG_FILE}
+  VARNAME=$1
+  PROMPT=$2
+  DEFAULT=${!VARNAME:-$3}
+  read -p "$1 [${DEFAULT}]: " RESULT
+  RESULT="${RESULT:-$DEFAULT}"
+  sed -i '' "/^${VARNAME}=/d" ${CONFIG_FILE}
+  echo "${VARNAME}=${RESULT}" >> ${CONFIG_FILE}
+}
+
+configure() {
+  prompt_for TWITTER_HANDLE     "Enter your twitter handle"
+  prompt_for EMAIL_ADDRESS      "Enter your email address"
+  prompt_for CELL_EMAIL_ADDRESS "Enter an email address for your cell phone (eg. 1234567890@vtext.com)"
+  prompt_for TERMINAL_APP       "Enter your terminal app (com.apple.Terminal, com.googlecode.iterm2)" "com.apple.Terminal"
+  prompt_for THEME_SONG         "Enter a path to your theme song" "~/waiting.mp3"
+}
+
+COMMAND="$1"
+shift
+
+# Fail if not configured and not configuring
+if [ ! -f ${CONFIG_FILE} ]
+then
+  if [ ${COMMAND} != "configure" ]
+  then
+    echo "Please run 'woof configure' first."
+    exit 1
+  fi
+else
+  . ${CONFIG_FILE}
+fi
+
+case $COMMAND in
+  email) email $*;;
+  text) text $*;;
+  dm_me) dm_me $*;;
+  tweet) tweet $*;;
+  notify) notify $*;;
+  say) say $*;;
+  music) music $*;;
+  woof) woofall $*;;
+  configure) configure;;
+  *)
+    usage
+    exit 1
+esac
