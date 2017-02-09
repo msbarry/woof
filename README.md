@@ -1,6 +1,6 @@
 # woof
 
-![](http://26.media.tumblr.com/tumblr_l5c2dv4Qkd1qaggjuo1_500.gif)
+![](https://i.imgur.com/ypDYgYZ.gif)
 
 Make long running tasks more fun (mac only).
 
